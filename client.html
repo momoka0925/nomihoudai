@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>飲み放題 注文</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d0d1a;color:#e8d5b7;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic',sans-serif;min-height:100vh;}
+button{cursor:pointer;font-family:inherit;}
+input{font-family:inherit;}
+
+#loading{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;min-height:100vh;}
+#loading .icon{font-size:48px;}
+#loading p{color:#9990bb;font-size:14px;}
+
+#tableScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.hero-icon{font-size:52px;margin-bottom:8px;}
+.hero-title{font-size:22px;font-weight:900;color:#e8c97a;letter-spacing:2px;margin-bottom:4px;}
+.hero-sub{color:#9990bb;font-size:12px;margin-bottom:36px;}
+.no-session{background:#2a1515;border:1px solid rgba(192,57,43,0.3);border-radius:12px;padding:14px;margin-bottom:24px;text-align:center;width:100%;max-width:340px;}
+.no-session strong{color:#c0392b;display:block;margin-bottom:4px;font-size:13px;}
+.no-session span{color:#9990bb;font-size:11px;}
+.table-label{font-size:13px;color:#9990bb;margin-bottom:12px;}
+.table-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:340px;}
+.table-btn{background:linear-gradient(135deg,#2d1b4e,#1a1a35);border:1px solid #5a3a8e;border-radius:12px;padding:18px 8px;color:#e8d5b7;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform 0.1s;}
+.table-btn:active{transform:scale(0.94);}
+.table-btn .ti{font-size:18px;}
+.table-btn .tn{font-size:20px;font-weight:900;}
+
+#menuScreen{display:none;flex-direction:column;min-height:100vh;}
+.mheader{background:linear-gradient(135deg,#1a1a35,#2d1b4e);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3a3a6e;position:sticky;top:0;z-index:10;}
+.mhtitle{font-size:15px;font-weight:800;color:#e8c97a;}
+.mhsub{font-size:11px;color:#9990bb;}
+.cbadge{background:#c0392b;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;display:none;}
+.cattabs{display:flex;overflow-x:auto;background:#12122a;border-bottom:1px solid #2a2a4a;scrollbar-width:none;}
+.cattabs::-webkit-scrollbar{display:none;}
+.cattab{padding:10px 14px;background:transparent;border:none;border-bottom:2px solid transparent;color:#9990bb;font-size:13px;white-space:nowrap;font-weight:400;}
+.cattab.active{background:#2d1b4e;color:#e8d5b7;font-weight:700;}
+.mlist{padding:14px;padding-bottom:170px;}
+.mitem{background:#1a1a35;border:1px solid #2a2a4a;border-radius:12px;padding:13px 14px;margin-bottom:9px;display:flex;align-items:center;gap:12px;}
+.mitem.incart{background:#1e2535;border-color:#5a6a8e;}
+.memoji{font-size:30px;flex-shrink:0;}
+.minfo{flex:1;}
+.mname{font-weight:700;font-size:15px;}
+.mcat{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-top:4px;}
+.addbtn{border:none;border-radius:10px;width:44px;height:44px;color:#fff;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.addbtn:active{opacity:0.8;}
+
+.cartbar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,transparent,#0d0d1a 25%);padding:16px 14px 28px;z-index:20;display:none;}
+.cartitems{background:#1a1a35;border:1px solid #3a3a6e;border-radius:12px;padding:10px 12px;margin-bottom:10px;max-height:150px;overflow-y:auto;}
+.crow{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.crow:last-child{margin-bottom:0;}
+.cemoji{font-size:16px;}
+.cname{flex:1;font-size:13px;}
+.notebtn{background:transparent;border:1px solid #3a3a6e;border-radius:6px;padding:2px 7px;font-size:11px;color:#5a5a8a;}
+.notebtn.hasnote{color:#e8c97a;border-color:rgba(232,201,122,0.3);}
+.noteinput{background:#0d0d1a;border:1px solid #5a3a8e;border-radius:6px;padding:3px 8px;color:#e8d5b7;font-size:11px;width:130px;outline:none;}
+.rmbtn{background:transparent;border:none;color:#c0392b;font-size:18px;line-height:1;}
+.submitbtn{width:100%;border:none;border-radius:12px;padding:15px;color:#0d0d1a;font-weight:900;font-size:16px;background:linear-gradient(135deg,#e8c97a,#d4a843);}
+.submitbtn:disabled{background:#444;color:#888;cursor:not-allowed;}
+
+#doneScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.dicon{font-size:60px;margin-bottom:12px;animation:bounce 0.6s ease;}
+.dtitle{color:#e8c97a;font-size:20px;font-weight:900;margin-bottom:6px;}
+.dsub{color:#9990bb;font-size:13px;margin-bottom:28px;}
+.slist{width:100%;max-width:340px;margin-bottom:24px;}
+.srow{background:#1a1a35;border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:center;}
+.semoji{font-size:22px;}
+.sname{flex:1;font-size:14px;}
+.snote{font-size:11px;color:#e8c97a;}
+.scheck{font-size:11px;color:#27ae60;}
+.morebtn{background:linear-gradient(135deg,#e8c97a,#d4a843);border:none;border-radius:12px;padding:14px 0;color:#0d0d1a;font-weight:900;font-size:16px;width:100%;max-width:340px;}
+
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="icon">🍺</div>
+  <p>読み込み中...</p>
+</div>
+
+<div id="tableScreen">
+  <div class="hero-icon">🍻</div>
+  <h1 class="hero-title">飲み放題</h1>
+  <p class="hero-sub">注文アプリ</p>
+  <div id="noSession" class="no-session" style="display:none;">
+    <strong>⚠ セッション未開始</strong>
+    <span>店員がセッションを開始するまでお待ちください</span>
+  </div>
+  <p class="table-label">テーブル番号を選んでください</p>
+  <div class="table-grid" id="tableGrid"></div>
+</div>
+
+<div id="menuScreen">
+  <div class="mheader">
+    <div>
+      <div class="mhtitle">🍻 飲み放題</div>
+      <div class="mhsub" id="tableLabel">テーブル -</div>
+    </div>
+    <div class="cbadge" id="cartBadge"></div>
+  </div>
+  <div class="cattabs" id="catTabs"></div>
+  <div class="mlist" id="menuList"></div>
+  <div class="cartbar" id="cartBar">
+    <div class="cartitems" id="cartItems"></div>
+    <button class="submitbtn" id="submitBtn" onclick="submitOrder()">🍺 注文する</button>
+  </div>
+</div>
+
+<div id="doneScreen">
+  <div class="dicon">🎉</div>
+  <h2 class="dtitle">注文完了！</h2>
+  <p class="dsub" id="doneTableLabel"></p>
+  <div class="slist" id="sentList"></div>
+  <button class="morebtn" onclick="goBackToMenu()">🍺 続けて注文する</button>
+</div>
+
+<script>
+const DB = "https://nomihoudai-e6797-default-rtdb.asia-southeast1.firebasedatabase.app";
+const CAT_COLOR = {"ビール":"#f39c12","チューハイ":"#27ae60","ハイボール":"#8e44ad","ワイン":"#c0392b","ノンアル":"#2980b9"};
+const DEFAULT_MENU = [
+  {id:"1", category:"ビール",     name:"生ビール",               emoji:"🍺"},
+  {id:"2", category:"ビール",     name:"黒ビール",               emoji:"🍺"},
+  {id:"3", category:"チューハイ", name:"レモンサワー",           emoji:"🍋"},
+  {id:"4", category:"チューハイ", name:"グレープフルーツサワー", emoji:"🍊"},
+  {id:"5", category:"チューハイ", name:"梅サワー",               emoji:"🌸"},
+  {id:"6", category:"ハイボール", name:"ウイスキーハイボール",   emoji:"🥃"},
+  {id:"7", category:"ハイボール", name:"梅ハイボール",           emoji:"🥃"},
+  {id:"8", category:"ワイン",     name:"赤ワイン",               emoji:"🍷"},
+  {id:"9", category:"ワイン",     name:"白ワイン",               emoji:"🥂"},
+  {id:"10",category:"ノンアル",   name:"ウーロン茶",             emoji:"🍵"},
+  {id:"11",category:"ノンアル",   name:"オレンジジュース",       emoji:"🍊"},
+  {id:"12",category:"ノンアル",   name:"コーラ",                 emoji:"🥤"},
+];
+
+let menu=[], tables=4, session=null, selTable=null, selCat=null, cart=[], sentOrders=[], noteIdx=null;
+
+async function fbGet(p){const r=await fetch(`${DB}/${p}.json`);return r.ok?r.json():null;}
+async function fbPost(p,d){const r=await fetch(`${DB}/${p}.json`,{method:"POST",body:JSON.stringify(d)});return r.json();}
+
+async function init(){
+  show("loading");
+  try{
+    const [m,s,t]=await Promise.all([fbGet("menu"),fbGet("session"),fbGet("tables")]);
+    menu=m?Object.values(m):DEFAULT_MENU;
+    session=s; tables=t||4;
+    selCat=[...new Set(menu.map(x=>x.category))][0];
+  }catch(e){console.error(e);menu=DEFAULT_MENU;}
+  renderTableScreen();
+  show("tableScreen");
+}
+
+function renderTableScreen(){
+  const g=document.getElementById("tableGrid");
+  g.innerHTML="";
+  document.getElementById("noSession").style.display=session?"none":"block";
+  for(let i=1;i<=tables;i++){
+    const b=document.createElement("button");
+    b.className="table-btn";
+    b.innerHTML=`<span class="ti">🪑</span><span class="tn">${i}</span>`;
+    b.onclick=()=>selectTable(i);
+    g.appendChild(b);
+  }
+}
+
+function selectTable(n){
+  selTable=n; cart=[]; noteIdx=null;
+  document.getElementById("tableLabel").textContent=`テーブル ${n}`;
+  renderCatTabs(); renderMenuList(); renderCartBar();
+  show("menuScreen");
+}
+
+function renderCatTabs(){
+  const cats=[...new Set(menu.map(m=>m.category))];
+  const el=document.getElementById("catTabs");
+  el.innerHTML="";
+  cats.forEach(cat=>{
+    const b=document.createElement("button");
+    b.className="cattab"+(cat===selCat?" active":"");
+    if(cat===selCat) b.style.borderBottomColor=CAT_COLOR[cat]||"#e8c97a";
+    b.textContent=cat;
+    b.onclick=()=>{selCat=cat;renderCatTabs();renderMenuList();};
+    el.appendChild(b);
+  });
+}
+
+function renderMenuList(){
+  const el=document.getElementById("menuList");
+  el.innerHTML="";
+  menu.filter(m=>m.category===selCat).forEach(item=>{
+    const count=cart.filter(c=>c.itemId===item.id).length;
+    const col=CAT_COLOR[item.category]||"#555";
+    const d=document.createElement("div");
+    d.className="mitem"+(count>0?" incart":"");
+    d.innerHTML=`
+      <span class="memoji">${item.emoji}</span>
+      <div class="minfo">
+        <div class="mname">${item.name}</div>
+        <span class="mcat" style="background:${col}22;color:${col}">${item.category}</span>
+      </div>
+      <button class="addbtn"
+        style="background:${count>0?'linear-gradient(135deg,#27ae60,#219a52)':'linear-gradient(135deg,#8e44ad,#7d3c98)'};font-size:${count>0?'18px':'22px'}"
+        onclick="addToCart('${item.id}')">
+        ${count>0?count:"+"}
+      </button>`;
+    el.appendChild(d);
+  });
+}
+
+function addToCart(itemId){
+  cart.push({itemId,note:""});
+  renderMenuList(); renderCartBar();
+}
+
+function removeFromCart(idx){
+  cart.splice(idx,1); noteIdx=null;
+  renderMenuList(); renderCartBar();
+}
+
+function setNote(idx,val){ cart[idx].note=val; }
+
+function toggleNote(idx){
+  noteIdx=noteIdx===idx?null:idx;
+  renderCartBar();
+  if(noteIdx===idx) setTimeout(()=>{const i=document.getElementById(`ni${idx}`);if(i)i.focus();},40);
+}
+
+function renderCartBar(){
+  const bar=document.getElementById("cartBar");
+  const badge=document.getElementById("cartBadge");
+  const btn=document.getElementById("submitBtn");
+  if(cart.length===0){bar.style.display="none";badge.style.display="none";return;}
+  bar.style.display="block";
+  badge.style.display="block";
+  badge.textContent=`🛒 ${cart.length}`;
+  btn.textContent=`🍺 ${cart.length}品を注文する`;
+  btn.disabled=false;
+  btn.style.background="linear-gradient(135deg,#e8c97a,#d4a843)";
+  btn.style.color="#0d0d1a";
+
+  const ci=document.getElementById("cartItems");
+  ci.innerHTML="";
+  cart.forEach((c,idx)=>{
+    const item=menu.find(m=>m.id===c.itemId);
+    const row=document.createElement("div");
+    row.className="crow";
+    const editing=noteIdx===idx;
+    row.innerHTML=`
+      <span class="cemoji">${item?.emoji||"🍹"}</span>
+      <span class="cname">${item?.name||"不明"}</span>
+      ${editing
+        ?`<input id="ni${idx}" class="noteinput" placeholder="メモ（例：氷少なめ）" value="${c.note}"
+            oninput="setNote(${idx},this.value)" onblur="noteIdx=null;renderCartBar()"/>`
+        :`<button class="notebtn${c.note?' hasnote':''}" onclick="toggleNote(${idx})">${c.note||"💬"}</button>`}
+      <button class="rmbtn" onclick="removeFromCart(${idx})">×</button>`;
+    ci.appendChild(row);
+  });
+}
+
+async function submitOrder(){
+  if(cart.length===0)return;
+  const btn=document.getElementById("submitBtn");
+  btn.disabled=true; btn.textContent="送信中..."; btn.style.background="#444"; btn.style.color="#888";
+  try{
+    const now=Date.now(), sent=[];
+    for(const c of cart){
+      await fbPost("orders",{itemId:c.itemId,table:selTable,note:c.note,orderedAt:now,served:false});
+      sent.push({...c,time:now});
+    }
+    sentOrders=sent; cart=[];
+    renderDone(); show("doneScreen");
+  }catch(e){
+    alert("送信に失敗しました。もう一度お試しください。");
+    btn.disabled=false; btn.textContent=`🍺 ${cart.length}品を注文する`;
+    btn.style.background="linear-gradient(135deg,#e8c97a,#d4a843)"; btn.style.color="#0d0d1a";
+  }
+}
+
+function renderDone(){
+  document.getElementById("doneTableLabel").textContent=`テーブル ${selTable} にお届けします`;
+  const el=document.getElementById("sentList");
+  el.innerHTML="";
+  sentOrders.forEach(o=>{
+    const item=menu.find(m=>m.id===o.itemId);
+    const row=document.createElement("div");
+    row.className="srow";
+    row.innerHTML=`
+      <span class="semoji">${item?.emoji||"🍹"}</span>
+      <span class="sname">${item?.name||"不明"}</span>
+      ${o.note?`<span class="snote">💬 ${o.note}</span>`:""}
+      <span class="scheck">✓</span>`;
+    el.appendChild(row);
+  });
+}
+
+function goBackToMenu(){
+  renderCatTabs(); renderMenuList(); renderCartBar();
+  show("menuScreen");
+}
+
+function show(id){
+  ["loading","tableScreen","menuScreen","doneScreen"].forEach(s=>{
+    const el=document.getElementById(s);
+    el.style.display=el.id===id?"flex":"none";
+  });
+}
+
+init();
+</script>
+</body>
+</html>
